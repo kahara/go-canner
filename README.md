@@ -14,6 +14,8 @@ The format is simply:
 timestamp;description;payload
 ```
 
+All fields are mandatory and can not be empty.
+
 **Timestamp** field is formatted as Golang's [RFC3339Nano](https://pkg.go.dev/time#pkg-constants).
 Time zone is always [Etc/UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time).
 
