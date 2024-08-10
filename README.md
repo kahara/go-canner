@@ -11,7 +11,7 @@ compress away nicely enough.
 The format is simply:
 
 ```
-timestamp;description;data
+timestamp;description;payload
 ```
 
 **Timestamp** field is formatted as Golang's [RFC3339Nano](https://pkg.go.dev/time#pkg-constants).
@@ -27,7 +27,7 @@ of descriptions would be:
 
 Records with different descriptions may appear in the same file.
 
-**Data** is Base64-encoded
+**Payload** is Base64-encoded
 ([RFC 4648](https://www.rfc-editor.org/rfc/rfc4648.html)),
 and can therefore consist of for example arbitrary plain text, JSON, or binary
 octets without anything breaking even if newlines, control characters, or null
@@ -57,3 +57,4 @@ These could be stored as follows:
 
 ## Metrics
 
+## Internals
