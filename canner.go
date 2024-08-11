@@ -1,10 +1,14 @@
 package canner
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
+
+const FileExtention = ".can"
 
 type Canner struct {
 	InLock   sync.Mutex
@@ -14,7 +18,8 @@ type Canner struct {
 	Suffix   string
 	File     os.File // One file at a time, assume timestamps of arriving records are in order
 	Ticker   *time.Ticker
-	Done     chan bool
+	Term     chan bool
+	Ack      chan bool
 }
 
 func NewCanner(prefix string, suffix string) *Canner {
@@ -24,15 +29,17 @@ func NewCanner(prefix string, suffix string) *Canner {
 		Prefix:   prefix,
 		Suffix:   suffix,
 		Ticker:   time.NewTicker(time.Second),
-		Done:     make(chan bool),
+		Term:     make(chan bool),
+		Ack:      make(chan bool),
 	}
 
 	// Flush periodically
 	go func() {
 		for {
 			select {
-			case <-c.Done:
+			case <-c.Term:
 				c.Flush()
+				c.Ack <- true // Notify Close() we're done flushing
 				return
 			case <-c.Ticker.C:
 				c.Flush()
@@ -54,15 +61,15 @@ func (c *Canner) Push(t time.Time, d string, p []byte) {
 }
 
 func (c *Canner) Flush() {
+	if len(c.InQueue) == 0 {
+		return
+	}
+
 	// Prepare to consume incoming records
 	c.InLock.Lock()
 	c.OutQueue = append(c.OutQueue, c.InQueue...)
 	c.InQueue = nil
 	c.InLock.Unlock()
-
-	if len(c.OutQueue) < 1 {
-		return
-	}
 
 	// Write records
 	for _, record := range c.OutQueue {
@@ -75,7 +82,14 @@ func (c *Canner) Write(r Record) {
 
 }
 
+func (c *Canner) Filename(r Record) string {
+	timestamp := r.Timestamp.Truncate(time.Hour)
+
+	return filepath.Join(c.Prefix, fmt.Sprintf("%s%s", timestamp.UTC().Format(time.RFC3339), FileExtention))
+}
+
 func (c *Canner) Close() {
 	c.Ticker.Stop()
-	c.Done <- true
+	c.Term <- true
+	<-c.Ack
 }

@@ -35,6 +35,8 @@ and can therefore consist of for example arbitrary plain text, JSON, or binary
 octets without anything breaking even if newlines, control characters, or null
 bytes appear in input.
 
+## Files and directories
+
 ## Example
 
 Consider the following
