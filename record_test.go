@@ -68,6 +68,36 @@ func TestNewRecord(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "APRS-IS packet with Zulu time",
+			args: args{
+				encoded: "2024-08-03T11:47:50.376903776Z;aprsis-raw;REM2Uk4tOT5BUEJNMUQsREIwQ0osRE1SKixxQVIsREIwQ0o6QDEwNDEwOWg0OTI1LjExTi8wMTE1Mi44NUV2MDE2LzAwME5vcmJlcnQ=",
+			},
+			want: &Record{
+				Timestamp: func() time.Time {
+					t, _ := time.Parse(time.RFC3339Nano, "2024-08-03T11:47:50.376903776Z")
+					return t
+				}(),
+				Description: "aprsis-raw",
+				Payload:     []byte("DC6RN-9>APBM1D,DB0CJ,DMR*,qAR,DB0CJ:@104109h4925.11N/01152.85Ev016/000Norbert"),
+			},
+			wantErr: false,
+		},
+		{
+			name: "APRS-IS packet with +0 time",
+			args: args{
+				encoded: "2024-08-03T11:47:59.657010503+00:00;aprsis-raw;T0U3TUZJLTI+QVBCTTFELE9FN1hVVCxETVIqLHFBUixPRTdYVVQ6PTQ3MjkuMzROLzAxMjM5Ljk2RVswMDAvMDAwL0E9MDA0MDA1Rmxvcmlhbg==",
+			},
+			want: &Record{
+				Timestamp: func() time.Time {
+					t, _ := time.Parse(time.RFC3339Nano, "2024-08-03T11:47:59.657010503+00:00")
+					return t
+				}(),
+				Description: "aprsis-raw",
+				Payload:     []byte("OE7MFI-2>APBM1D,OE7XUT,DMR*,qAR,OE7XUT:=4729.34N/01239.96E[000/000/A=004005Florian"),
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
