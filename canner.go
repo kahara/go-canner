@@ -15,19 +15,17 @@ type Canner struct {
 	InQueue  []Record
 	OutQueue []Record
 	Prefix   string
-	Suffix   string
-	File     os.File // One file at a time, assume timestamps of arriving records are in order
+	File     *os.File // One file at a time, assume timestamps of arriving records are in order
 	Ticker   *time.Ticker
 	Term     chan bool
 	Ack      chan bool
 }
 
-func NewCanner(prefix string, suffix string) *Canner {
+func NewCanner(prefix string) *Canner {
 	c := Canner{
 		InQueue:  make([]Record, 0),
 		OutQueue: make([]Record, 0),
 		Prefix:   prefix,
-		Suffix:   suffix,
 		Ticker:   time.NewTicker(time.Second),
 		Term:     make(chan bool),
 		Ack:      make(chan bool),
@@ -79,7 +77,28 @@ func (c *Canner) Flush() {
 }
 
 func (c *Canner) Write(r Record) {
+	filename := c.Filename(r)
 
+	if c.File != nil && filename != c.File.Name() {
+		if err := c.File.Close(); err != nil {
+			panic(err)
+		}
+	}
+
+	if file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0644); err != nil {
+		panic(err)
+	} else {
+		c.File = file
+	}
+
+	if buf, err := r.Encode(); err != nil {
+		panic(err)
+	} else {
+		buf = append(buf, '\n')
+		if _, err := c.File.Write(buf); err != nil {
+			panic(err)
+		}
+	}
 }
 
 func (c *Canner) Filename(r Record) string {
@@ -92,4 +111,11 @@ func (c *Canner) Close() {
 	c.Ticker.Stop()
 	c.Term <- true
 	<-c.Ack
+
+	if c.File == nil {
+		return
+	}
+	if err := c.File.Close(); err != nil {
+		panic(err)
+	}
 }
