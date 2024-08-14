@@ -32,7 +32,7 @@ func NewRecord(encoded string) (*Record, error) {
 	if timestamp, err := time.Parse(TimestampFormat, parts[0]); err != nil {
 		return nil, err
 	} else {
-		record.Timestamp = timestamp
+		record.Timestamp = timestamp.UTC()
 	}
 
 	// Description
