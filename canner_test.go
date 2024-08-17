@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func ParseRecords(records []string) []Record {
@@ -45,7 +46,6 @@ func TestCannerRoundtrip(t *testing.T) {
 		{
 			name: "Span two hours",
 			args: args{
-				// 2038-01-19T03:14:07Z
 				groups: map[string][]Record{
 					"2038-01-19T00:00:00Z/2038-01-19T03:00:00Z": ParseRecords([]string{
 						"2038-01-19T03:14:07Z;plain;Rm9vIQ==",
@@ -124,45 +124,83 @@ func TestCannerRoundtrip(t *testing.T) {
 	}
 }
 
-//func TestCanner_Filename(t *testing.T) {
-//	type fields struct {
-//		InLock   sync.Mutex
-//		InQueue  []Record
-//		OutQueue []Record
-//		Prefix   string
-//		Suffix   string
-//		File     os.File
-//		Ticker   *time.Ticker
-//		Term     chan bool
-//		Ack      chan bool
-//	}
-//	type args struct {
-//		r Record
-//	}
-//	tests := []struct {
-//		name   string
-//		fields fields
-//		args   args
-//		want   string
-//	}{
-//		// TODO: Add test cases.
-//	}
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			c := &Canner{
-//				InLock:   tt.fields.InLock,
-//				InQueue:  tt.fields.InQueue,
-//				OutQueue: tt.fields.OutQueue,
-//				Prefix:   tt.fields.Prefix,
-//				Suffix:   tt.fields.Suffix,
-//				File:     tt.fields.File,
-//				Ticker:   tt.fields.Ticker,
-//				Term:     tt.fields.Term,
-//				Ack:      tt.fields.Ack,
-//			}
-//			if got := c.Filename(tt.args.r); got != tt.want {
-//				t.Errorf("Filename() = %v, want %v", got, tt.want)
-//			}
-//		})
-//	}
-//}
+func TestCanner_Filename(t *testing.T) {
+	type fields struct {
+		Prefix string
+	}
+	type args struct {
+		record Record
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   string
+	}{
+		{
+			name: "All zeros",
+			fields: fields{
+				Prefix: "/path/to",
+			},
+			args: args{
+				record: Record{
+					Timestamp: time.Time{},
+				},
+			},
+			want: "/path/to/0001-01-01T00:00:00Z/0001-01-01T00:00:00Z.can",
+		},
+		{
+			name: "All zeros and relative path",
+			fields: fields{
+				Prefix: "../path/to",
+			},
+			args: args{
+				record: Record{
+					Timestamp: time.Time{},
+				},
+			},
+			want: "../path/to/0001-01-01T00:00:00Z/0001-01-01T00:00:00Z.can",
+		},
+		{
+			name: "A timestamp",
+			fields: fields{
+				Prefix: "/path/to",
+			},
+			args: args{
+				record: Record{
+					Timestamp: func() time.Time {
+						t, _ := time.Parse(time.RFC3339Nano, "2024-08-17T14:31:42.503657010Z")
+						return t
+					}(),
+				},
+			},
+			want: "/path/to/2024-08-17T00:00:00Z/2024-08-17T14:00:00Z.can",
+		},
+		{
+			name: "Past y2k38",
+			fields: fields{
+				Prefix: "/path/to",
+			},
+			args: args{
+				record: Record{
+					// 2038-01-19T03:15:11.700Z
+					Timestamp: func() time.Time {
+						t, _ := time.Parse(time.RFC3339Nano, "2038-01-19T03:15:11.700Z")
+						return t
+					}(),
+				},
+			},
+			want: "/path/to/2038-01-19T00:00:00Z/2038-01-19T03:00:00Z.can",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Canner{
+				Prefix: tt.fields.Prefix,
+			}
+			if got := c.Filename(tt.args.record); got != tt.want {
+				t.Errorf("Filename() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
