@@ -42,6 +42,23 @@ func TestCannerRoundtrip(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Span two hours",
+			args: args{
+				// 2038-01-19T03:14:07Z
+				groups: map[string][]Record{
+					"2038-01-19T03:00:00Z": ParseRecords([]string{
+						"2038-01-19T03:14:07Z;plain;Rm9vIQ==",
+						"2038-01-19T03:14:08Z;plain;QmFy",
+						"2038-01-19T03:59:59.1Z;plain;YmF6",
+					}),
+					"2038-01-19T04:00:00Z": ParseRecords([]string{
+						"2038-01-19T04:00:00.123456789Z;plain;cXV1eA==",
+						"2038-01-19T04:00:00.3000Z;plain;ZnVycmZ1",
+					}),
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -50,15 +67,11 @@ func TestCannerRoundtrip(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-
-			//
-			//defer os.RemoveAll(tempDir)
-			//
+			defer os.RemoveAll(tempDir)
 
 			canner := NewCanner(tempDir)
 			for _, records := range tt.args.groups {
 				for _, record := range records {
-					t.Logf("Pushing %#v", record)
 					canner.Push(record.Timestamp, record.Description, record.Payload)
 				}
 			}
@@ -67,7 +80,6 @@ func TestCannerRoundtrip(t *testing.T) {
 			for truncatedTimestamp, records := range tt.args.groups {
 				filename := filepath.Join(canner.Prefix, fmt.Sprintf("%s%s", truncatedTimestamp, FileExtention))
 				t.Logf("Filename %s", filename)
-				t.Logf("Records  %#v", records)
 
 				file, err := os.Open(filename)
 				if err != nil {
