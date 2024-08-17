@@ -87,6 +87,10 @@ func (c *Canner) Write(r Record) {
 	}
 
 	if c.File == nil {
+		if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
+			panic(err)
+		}
+
 		if file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644); err != nil {
 			panic(err)
 		} else {
@@ -105,9 +109,9 @@ func (c *Canner) Write(r Record) {
 }
 
 func (c *Canner) Filename(r Record) string {
-	timestamp := r.Timestamp.UTC().Truncate(time.Hour)
-
-	return filepath.Join(c.Prefix, fmt.Sprintf("%s%s", timestamp.Format(time.RFC3339), FileExtention))
+	return filepath.Join(c.Prefix,
+		r.Timestamp.UTC().Truncate(24*time.Hour).Format(time.RFC3339),
+		fmt.Sprintf("%s%s", r.Timestamp.UTC().Truncate(time.Hour).Format(time.RFC3339), FileExtention))
 }
 
 func (c *Canner) Close() {

@@ -32,7 +32,7 @@ func TestCannerRoundtrip(t *testing.T) {
 			name: "Inside one hour",
 			args: args{
 				groups: map[string][]Record{
-					"2024-08-03T11:00:00Z": ParseRecords([]string{
+					"2024-08-03T00:00:00Z/2024-08-03T11:00:00Z": ParseRecords([]string{
 						"2024-08-03T11:00:00+00:00;aprsis-raw;S0MxUkFZLTEwPkFQQk0xRCxLQzFWQVgsRE1SKixxQVIsS0MxVkFYOkAxNTM5MzdoNDE1My4zM04vMDcxMTIuMTJXdjIxNC8wMDBSYXkgQVQtNTc4VVYgTW9iaWxl",
 						"2024-08-03T11:13:50.376903776+00:00;aprsis-raw;REM2Uk4tOT5BUEJNMUQsREIwQ0osRE1SKixxQVIsREIwQ0o6QDEwNDEwOWg0OTI1LjExTi8wMTE1Mi44NUV2MDE2LzAwME5vcmJlcnQ=",
 						"2024-08-03T11:17:53.976918173+00:00;aprsis-raw;S0o1RFNLLTE+QVBCTTFELFdCNUxJVixETVIqLHFBUixXQjVMSVY6PTMwMTQuNzROLzA5MTA2LjE5V2swMDAvMDAwL0E9LTAwMDU5",
@@ -47,12 +47,12 @@ func TestCannerRoundtrip(t *testing.T) {
 			args: args{
 				// 2038-01-19T03:14:07Z
 				groups: map[string][]Record{
-					"2038-01-19T03:00:00Z": ParseRecords([]string{
+					"2038-01-19T00:00:00Z/2038-01-19T03:00:00Z": ParseRecords([]string{
 						"2038-01-19T03:14:07Z;plain;Rm9vIQ==",
 						"2038-01-19T03:14:08Z;plain;QmFy",
 						"2038-01-19T03:59:59.1Z;plain;YmF6",
 					}),
-					"2038-01-19T04:00:00Z": ParseRecords([]string{
+					"2038-01-19T00:00:00Z/2038-01-19T04:00:00Z": ParseRecords([]string{
 						"2038-01-19T04:00:00.123456789Z;plain;cXV1eA==",
 						"2038-01-19T04:00:00.3000Z;plain;ZnVycmZ1",
 					}),
