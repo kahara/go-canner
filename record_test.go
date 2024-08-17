@@ -165,16 +165,6 @@ func TestRecord_Encode(t *testing.T) {
 			want:    []byte("0001-01-01T00:00:00Z;plain;cGF5bG9hZA=="),
 			wantErr: false,
 		},
-		//{
-		//	name: "",
-		//	fields: fields{
-		//		Timestamp:   time.Time{},
-		//		Description: "",
-		//		Payload:     nil,
-		//	},
-		//	want:    nil,
-		//	wantErr: false,
-		//},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
