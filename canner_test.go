@@ -94,6 +94,7 @@ func TestCannerRoundtrip(t *testing.T) {
 							b, _ := record.Encode()
 							if bytes.Equal(a, b) {
 								recordsRemaining--
+								break
 							}
 						}
 					} else {
