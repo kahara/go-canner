@@ -8,27 +8,28 @@ import (
 	"time"
 )
 
-const FileExtention = ".can"
+const (
+	LineSeparator = '\n'
+	FileExtention = ".can"
+)
 
 type Canner struct {
-	InLock   sync.Mutex
-	InQueue  []Record
-	OutQueue []Record
-	Prefix   string
-	File     *os.File // One file at a time, assume timestamps of arriving records are in order
-	Ticker   *time.Ticker
-	Term     chan bool
-	Ack      chan bool
+	Lock   sync.Mutex
+	Queue  []Record
+	Prefix string
+	File   *os.File // One file at a time, assume timestamps of arriving records are in order
+	Ticker *time.Ticker
+	Term   chan bool
+	Ack    chan bool
 }
 
 func NewCanner(prefix string) *Canner {
 	c := Canner{
-		InQueue:  make([]Record, 0),
-		OutQueue: make([]Record, 0),
-		Prefix:   prefix,
-		Ticker:   time.NewTicker(time.Second),
-		Term:     make(chan bool),
-		Ack:      make(chan bool),
+		Queue:  make([]Record, 0),
+		Prefix: prefix,
+		Ticker: time.NewTicker(time.Second),
+		Term:   make(chan bool),
+		Ack:    make(chan bool),
 	}
 
 	// Flush periodically
@@ -48,36 +49,33 @@ func NewCanner(prefix string) *Canner {
 	return &c
 }
 
-func (c *Canner) Push(t time.Time, d string, p []byte) {
-	c.InLock.Lock()
-	c.InQueue = append(c.InQueue, Record{
-		Timestamp:   t,
-		Description: d,
-		Payload:     p,
-	})
-	c.InLock.Unlock()
+func (c *Canner) Push(record Record) {
+	c.Lock.Lock()
+	c.Queue = append(c.Queue, record)
+	c.Lock.Unlock()
 }
 
 func (c *Canner) Flush() {
-	if len(c.InQueue) == 0 {
+	if len(c.Queue) == 0 {
 		return
 	}
 
 	// Prepare to consume incoming records
-	c.InLock.Lock()
-	c.OutQueue = append(c.OutQueue, c.InQueue...)
-	c.InQueue = nil
-	c.InLock.Unlock()
+	outQueue := make([]Record, 0)
+
+	c.Lock.Lock()
+	outQueue = append(outQueue, c.Queue...)
+	c.Queue = nil
+	c.Lock.Unlock()
 
 	// Write records
-	for _, record := range c.OutQueue {
+	for _, record := range outQueue {
 		c.Write(record)
 	}
-	c.OutQueue = nil
 }
 
-func (c *Canner) Write(r Record) {
-	filename := c.Filename(r)
+func (c *Canner) Write(record Record) {
+	filename := c.Filename(record)
 
 	if c.File != nil && filename != c.File.Name() {
 		if err := c.File.Close(); err != nil {
@@ -98,20 +96,20 @@ func (c *Canner) Write(r Record) {
 		}
 	}
 
-	if buf, err := r.Encode(); err != nil {
+	if buf, err := record.Encode(); err != nil {
 		panic(err)
 	} else {
-		buf = append(buf, '\n')
+		buf = append(buf, LineSeparator)
 		if _, err := c.File.Write(buf); err != nil {
 			panic(err)
 		}
 	}
 }
 
-func (c *Canner) Filename(r Record) string {
+func (c *Canner) Filename(record Record) string {
 	return filepath.Join(c.Prefix,
-		r.Timestamp.UTC().Truncate(24*time.Hour).Format(time.RFC3339),
-		fmt.Sprintf("%s%s", r.Timestamp.UTC().Truncate(time.Hour).Format(time.RFC3339), FileExtention))
+		record.Timestamp.UTC().Truncate(24*time.Hour).Format(time.RFC3339),
+		fmt.Sprintf("%s%s", record.Timestamp.UTC().Truncate(time.Hour).Format(time.RFC3339), FileExtention))
 }
 
 func (c *Canner) Close() {
