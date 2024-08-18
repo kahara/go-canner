@@ -78,8 +78,8 @@ func (c *Canner) Flush() {
 	}
 }
 
-func (c *Canner) Write(r Record) {
-	filename := c.Filename(r)
+func (c *Canner) Write(record Record) {
+	filename := c.Filename(record)
 
 	if c.File != nil && filename != c.File.Name() {
 		if err := c.File.Close(); err != nil {
@@ -100,7 +100,7 @@ func (c *Canner) Write(r Record) {
 		}
 	}
 
-	if buf, err := r.Encode(); err != nil {
+	if buf, err := record.Encode(); err != nil {
 		panic(err)
 	} else {
 		buf = append(buf, LineSeparator)
@@ -110,10 +110,10 @@ func (c *Canner) Write(r Record) {
 	}
 }
 
-func (c *Canner) Filename(r Record) string {
+func (c *Canner) Filename(record Record) string {
 	return filepath.Join(c.Prefix,
-		r.Timestamp.UTC().Truncate(24*time.Hour).Format(time.RFC3339),
-		fmt.Sprintf("%s%s", r.Timestamp.UTC().Truncate(time.Hour).Format(time.RFC3339), FileExtention))
+		record.Timestamp.UTC().Truncate(24*time.Hour).Format(time.RFC3339),
+		fmt.Sprintf("%s%s", record.Timestamp.UTC().Truncate(time.Hour).Format(time.RFC3339), FileExtention))
 }
 
 func (c *Canner) Close() {
