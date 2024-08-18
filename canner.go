@@ -49,13 +49,9 @@ func NewCanner(prefix string) *Canner {
 	return &c
 }
 
-func (c *Canner) Push(t time.Time, d string, p []byte) {
+func (c *Canner) Push(record Record) {
 	c.Lock.Lock()
-	c.Queue = append(c.Queue, Record{
-		Timestamp:   t,
-		Description: d,
-		Payload:     p,
-	})
+	c.Queue = append(c.Queue, record)
 	c.Lock.Unlock()
 }
 

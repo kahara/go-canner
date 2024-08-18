@@ -72,7 +72,7 @@ func TestCannerRoundtrip(t *testing.T) {
 			canner := NewCanner(tempDir)
 			for _, records := range tt.args.groups {
 				for _, record := range records {
-					canner.Push(record.Timestamp, record.Description, record.Payload)
+					canner.Push(record)
 				}
 			}
 			canner.Close()
